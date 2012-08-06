@@ -1,0 +1,35 @@
+id: PQManager
+name: Publish Queue Manager
+l10n_class:  PQManager::L10N
+description: <__trans phrase='Provides a management console for Publish Queue.'>
+version: 0.97
+author_name: Byrne Reese
+author_link: http://www.majordojo.com/
+plugin_link: http://www.majordojo.com/projects/publish-queue-manager.php
+
+widgets:
+  TheSchwartzStats:
+    label: TheSchwartz Stats
+    template: widget.tmpl
+    singular: true
+    set: sidebar
+    view: blog
+    handler: $PQManager::PQManager::Plugin::hdlr_widget
+applications:
+  cms:
+    methods: 
+      PQManager.list: $PQManager::PQManager::Plugin::mode_list_queue
+      PQManager.delete: $PQManager::PQManager::Plugin::mode_delete
+    list_actions:
+      ts_job: 
+        priority: 
+          label: Change Priority
+          code: $PQManager::PQManager::Plugin::mode_priority
+          input: 1
+          input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
+    menus:
+      tools:pqueue:
+        label: Publish Queue
+        order: 1000
+        mode: PQManager.list
+        view: system
