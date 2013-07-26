@@ -2,34 +2,192 @@ id: PQManager
 name: Publish Queue Manager
 l10n_class:  PQManager::L10N
 description: <__trans phrase='Provides a management console for Publish Queue.'>
-version: 0.97
-author_name: Byrne Reese
-author_link: http://www.majordojo.com/
-plugin_link: http://www.majordojo.com/projects/publish-queue-manager.php
+version: 0.10
 
-widgets:
-  TheSchwartzStats:
-    label: TheSchwartz Stats
-    template: widget.tmpl
-    singular: true
-    set: sidebar
-    view: blog
-    handler: $PQManager::PQManager::Plugin::hdlr_widget
+#widgets:
+#  TheSchwartzStats:
+#    label: TheSchwartz Stats
+#    template: widget.tmpl
+#    singular: true
+#    set: sidebar
+#    view: blog
+#    handler: $PQManager::PQManager::Plugin::hdlr_widget
 applications:
   cms:
-    methods: 
-      PQManager.list: $PQManager::PQManager::Plugin::mode_list_queue
-      PQManager.delete: $PQManager::PQManager::Plugin::mode_delete
-    list_actions:
-      ts_job: 
-        priority: 
-          label: Change Priority
-          code: $PQManager::PQManager::Plugin::mode_priority
-          input: 1
-          input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
     menus:
       tools:pqueue:
         label: Publish Queue
         order: 1000
-        mode: PQManager.list
-        view: system
+        mode: list
+        args:
+          _type: ts_job
+        view:
+          - system
+listing_screens:
+  ts_job:
+    object_label_plural: Publish Queue
+    screen_label: Publish Queue
+    primary: uniqkey
+    view:
+      - blog
+      - website
+      - system
+    default_sort_key: priority
+    #scope_mode: wide
+list_properties:
+  ts_job:
+    jobid:
+      auto: 1
+      label: ID
+      order: 100
+      display: default
+    uniqkey:
+      auto: 1
+      label: Uniqkey
+      order: 100
+      display: default
+    priority:
+      auto: 1
+      label: Priority
+      order: 150
+      display: force
+    insert_time:
+      auto: 1
+      label: Insert Time
+      order: 200
+      display: default
+      html: >
+        sub {
+          use MT::Util qw( epoch2ts format_ts );
+          my ($prop, $obj, $app) = @_;
+          my $inser_ts = epoch2ts($app->blog, $obj->insert_time);
+          my $insert_date =
+            format_ts( MT::App::CMS::LISTING_DATE_FORMAT(), $inser_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $insert_time =
+            format_ts( '%I:%M:%S%p', $inser_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $out = qq {
+            <span>$insert_date</span><span class="created_time"><br />$insert_time</span>
+          };
+          return $out;
+        }
+    publish_path:
+      label: Publish Path
+      base: __virtual.string
+      display: force
+      order: 300
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <em>Load Failure</em> };
+          my $url = $fi->url || 'No PublishPath';
+          my $out = qq {
+            <span>$url</span>
+          };
+          return $out;
+        }
+    blog:
+      label: Blog
+      base: __virtual.string
+      display: option
+      order: 350
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <em>Load Failure</em> };
+          my $blog = mt->model( 'blog' )->load({ id => $fi->blog_id })
+            or return qq{ '<em>No Blog</em>' };
+          my $blog_name = $blog->name;
+          my $out = qq {
+            <span>$blog_name</span>
+          };
+          return $out;
+        }
+    archive_type:
+      label: Archive Type
+      base: __virtual.string
+      display: option
+      order: 400
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <em>Load Failure</em> };
+          my $archive_type = $fi->archive_type || 'No ArchiveType';
+          my $out = qq {
+            <span>$archive_type</span>
+          };
+          return $out;
+        }
+    template:
+      label: Template
+      base: __virtual.string
+      display: option
+      order: 400
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <em>Load Failure</em> };
+          my $tmpl = mt->model( 'template' )->load({ id => $fi->template_id })
+            or return qq{ '<em>No Template</em>' };
+          my $template_name = $tmpl->name;
+          my $out = qq {
+            <span>$template_name</span>
+          };
+          my $out = 'TEST';
+          return $out;
+        }
+    entry_id:
+      label: Entry ID
+      base: __virtual.string
+      display: option
+      order: 400
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <em>Load Failure</em> };
+          my $entry_id = $fi->entry_id || 'No EntryID';
+          my $out = qq {
+            <span>$entry_id</span>
+          };
+          return $out;
+        }
+    coalesce:
+      auto: 1
+      label: Coalesce
+      order: 400
+      display: option
+    funcid:
+      auto: 1
+      label: Funcid
+      order: 500
+      display: option
+    grabbed_until:
+      auto: 1
+      label: Grabbed Until
+      order: 600
+      display: option
+    run_after:
+      auto: 1
+      label: Run After
+      order: 700
+      display: option
+    #arg:
+      #auto: 1
+      #label: Arg
+      #order: 500
+      #display: default
+list_actions:
+  ts_job: 
+    priority: 
+      label: Change Priority
+      code: $PQManager::PQManager::Plugin::mode_priority
+      input: 1
+      input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
+    delete:
+      label: Delete
+      code: $PQManager::PQManager::Plugin::mode_delete
+      button: 1
