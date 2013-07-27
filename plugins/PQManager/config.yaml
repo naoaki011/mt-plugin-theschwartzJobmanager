@@ -23,17 +23,24 @@ applications:
           _type: ts_job
         view:
           - system
+          - website
+          - blog
 listing_screens:
   ts_job:
     object_label_plural: Publish Queue
     screen_label: Publish Queue
-    primary: uniqkey
+    #primary: uniqkey
     view:
       - blog
       - website
       - system
     default_sort_key: priority
-    #scope_mode: wide
+    permission: administrator
+    scope_mode: none
+    condition: >
+      sub {
+        return 1;
+      }
 list_properties:
   ts_job:
     jobid:
@@ -44,17 +51,17 @@ list_properties:
     uniqkey:
       auto: 1
       label: Uniqkey
-      order: 100
-      display: default
+      order: 150
+      display: option
     priority:
       auto: 1
       label: Priority
-      order: 150
-      display: force
+      order: 200
+      display: option
     insert_time:
       auto: 1
       label: Insert Time
-      order: 200
+      order: 300
       display: default
       html: >
         sub {
@@ -74,7 +81,7 @@ list_properties:
       label: Publish Path
       base: __virtual.string
       display: force
-      order: 300
+      order: 400
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -90,96 +97,126 @@ list_properties:
       label: Blog
       base: __virtual.string
       display: option
-      order: 350
+      order: 450
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
           my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
-            or return qq{ <em>Load Failure</em> };
+            or return qq{ <span>-</span> };
           my $blog = mt->model( 'blog' )->load({ id => $fi->blog_id })
-            or return qq{ '<em>No Blog</em>' };
+            or return qq{ <span>-</span> };
           my $blog_name = $blog->name;
+          my $blog_id = $blog->id;
           my $out = qq {
-            <span>$blog_name</span>
+            <span><a href="./mt.cgi?blog_id=$blog_id">$blog_name</a></span>
           };
           return $out;
+        }
+      condition: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          return 1;
         }
     archive_type:
       label: Archive Type
       base: __virtual.string
       display: option
-      order: 400
+      order: 500
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
           my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
-            or return qq{ <em>Load Failure</em> };
+            or return qq{ <span>-</span> };
           my $archive_type = $fi->archive_type || 'No ArchiveType';
           my $out = qq {
             <span>$archive_type</span>
           };
           return $out;
         }
+    entry:
+      label: Entry
+      base: __virtual.string
+      display: option
+      order: 550
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+            or return qq{ <span>-</span> };
+          my $entry_id = $fi->entry_id || '';
+          my $out = '';
+          if ($entry_id) {
+            my $blog_id = $fi->blog_id || 0;
+            my $entry_type = ($fi->archive_type eq 'Individual') ? 'entry' : 'page';
+            my $entry = mt->model( 'entry' )->load( $entry_id )
+              or return '<em>Load Entry Failure</em>';
+            my $entry_title = $entry->title || 'no title';
+            $out = qq {
+            <span><a href="./mt.cgi?__mode=view&_type=$entry_type&blog_id=$blog_id&id=$entry_id">$entry_title</a></span>
+            };
+          }
+          $entry_id ? return $out : ($fi->archive_type eq 'Individual')||($fi->archive_type eq 'Page')
+            ? return '<span>No EntryID</span>' : return '<span>-</span>';
+        }
     template:
       label: Template
       base: __virtual.string
       display: option
-      order: 400
+      order: 600
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
           my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
-            or return qq{ <em>Load Failure</em> };
-          my $tmpl = mt->model( 'template' )->load({ id => $fi->template_id })
-            or return qq{ '<em>No Template</em>' };
-          my $template_name = $tmpl->name;
-          my $out = qq {
-            <span>$template_name</span>
-          };
-          my $out = 'TEST';
-          return $out;
-        }
-    entry_id:
-      label: Entry ID
-      base: __virtual.string
-      display: option
-      order: 400
-      html: >
-        sub {
-          my ($prop, $obj, $app) = @_;
-          my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
-            or return qq{ <em>Load Failure</em> };
-          my $entry_id = $fi->entry_id || 'No EntryID';
-          my $out = qq {
-            <span>$entry_id</span>
-          };
-          return $out;
+            or return qq{ <span>-</span> };
+          my $tmpl = mt->model( 'template' )->load({ id => $fi->template_id });
+          if ($tmpl) {
+            my $template_name = $tmpl->name || 'no name';
+            my $blog_id = $fi->blog_id || 0;
+            my $template_id = $fi->template_id;
+            my $out = qq {
+              <span><a href="./mt.cgi?__mode=view&_type=template&id=$template_id&blog_id=$blog_id">$template_name</a></span>
+            };
+            return $out;
+          } else {
+            return qq{ '<em>No Template</em>' };
+          }
         }
     coalesce:
       auto: 1
       label: Coalesce
-      order: 400
+      order: 650
       display: option
     funcid:
       auto: 1
       label: Funcid
-      order: 500
+      order: 700
       display: option
     grabbed_until:
       auto: 1
       label: Grabbed Until
-      order: 600
+      order: 750
       display: option
     run_after:
       auto: 1
       label: Run After
-      order: 700
+      order: 800
       display: option
-    #arg:
-      #auto: 1
-      #label: Arg
-      #order: 500
-      #display: default
+    err:
+      label: Error
+      base: __virtual.string
+      display: option
+      order: 900
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          require MT::TheSchwartz::Error;
+          my $err = MT::TheSchwartz::Error->load({ jobid => $obj->jobid });
+          my $err_msg = $err ? $err->message : undef;
+          my $out = $err_msg ? qq {
+            <span>$err_msg</span>
+          } : '';
+          return $out;
+        }
 list_actions:
   ts_job: 
     priority: 
@@ -191,3 +228,8 @@ list_actions:
       label: Delete
       code: $PQManager::PQManager::Plugin::mode_delete
       button: 1
+    #publish:
+    #  label: Publish
+    #  code: >
+    #    sub { return 1; }
+    #  button: 1

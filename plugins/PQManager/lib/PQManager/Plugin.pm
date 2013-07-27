@@ -8,11 +8,6 @@ use MT::Util qw( relative_date epoch2ts iso2ts );
 use warnings;
 use Carp;
 
-#sub instance {
-#    my $plugin = MT->component('PQManager');
-#    return $plugin;
-#}
-
 sub hdlr_widget {
     my $app = shift;
     my ($tmpl, $param) = @_;
@@ -20,31 +15,22 @@ sub hdlr_widget {
     my @data;
     my $task_workers = MT->component('core')->registry('task_workers');
     for my $name (keys %$task_workers) {
-	my $worker = $task_workers->{$name};
-	my $funcmap = MT->model('ts_funcmap')->load({
-	    funcname => $worker->{class}
-	}, {
-	    unique   => 1
-	})
-	    or next;
-	my $count = MT->model('ts_job')->count({
-	    funcid   => $funcmap->funcid
-	});
+        my $worker = $task_workers->{$name};
+        my $funcmap = MT->model('ts_funcmap')->load({
+            funcname => $worker->{class}
+        }, {
+            unique   => 1
+        })
+            or next;
+        my $count = MT->model('ts_job')->count({
+            funcid   => $funcmap->funcid
+        });
 
-	# I'm not sure, but the following code doesn't work
-	#my $count = MT->model('ts_job')->count(undef, {
-	#    'join' => MT->model('ts_funcmap')->join_on(
-	#	'funcid',
-	#	{ funcname => $worker->{class} },
-	#	{ unique => 1 }
-	#    )
-	#});
-
-	push @data, {
-	    name  => $name,
-	    label => $worker->{label},
-	    count => $count,
-	};
+        push @data, {
+            name  => $name,
+            label => $worker->{label},
+            count => $count,
+        };
     }
     $param->{data} = \@data;
 
@@ -53,12 +39,14 @@ sub hdlr_widget {
 
 sub mode_delete {
     my $app = shift;
-    $app->validate_magic or return;
+    $app->validate_magic
+      or return;
 
     require MT::TheSchwartz::Job;
     my @jobs = $app->param('id');
     for my $job_id (@jobs) {
-        my $job = MT::TheSchwartz::Job->load({jobid => $job_id}) or next;
+        my $job = MT::TheSchwartz::Job->load({jobid => $job_id})
+          or next;
         $job->remove();
     }
     $app->redirect(
@@ -78,7 +66,7 @@ sub mode_priority {
     $app->validate_magic or return;
 
     my $pri = $app->param('itemset_action_input');
-    if ($pri !~ /^[0-9]+$/) {
+    if (($pri !~ /^[0-9]+$/)||($pri > 10)) {
         return $app->error("You must enter a number between 1 and 10.");
     }
 
@@ -99,123 +87,6 @@ sub mode_priority {
                 }
             )
         );
-}
-
-sub mode_list_queue {
-    my $app = shift;
-    my %param = @_;
-    my $q = $app->{query};
-
-    if (my $blog = $app->blog) {
-        $app->redirect(
-            $app->uri(
-                'mode' => 'dashboard',
-                args   => {
-                    blog_id => $blog->id,
-                }
-            )
-        );
-    }
-
-    # This anonymous subroutine will process each row of data returned
-    # by the database and map that data into a set of columns that will
-    # be displayed in the table itself. The method takes as input:
-    #   * the object associated with the current row
-    #   * an empty hash for the row that should be populated with content
-    #     from the $obj passed to it.
-    require MT::FileInfo;
-    require MT::Template;
-    require MT::Blog;
-    require MT::TheSchwartz::Error;
-    my %blogs;
-    my %tmpls;
-    my $code = sub {
-        my ($job, $row) = @_;
-
-        $row->{'insert_time_raw'} = $job->insert_time;
-        my $fi                    = MT::FileInfo->load({ id => $job->uniqkey });
-        my $err                   = MT::TheSchwartz::Error->load({ jobid => $job->jobid });
-
-        $tmpls{$fi->template_id} ||= MT::Template->load({ id => $fi->template_id });
-        my $tmpl                  = $tmpls{$fi->template_id};
-
-	if ($tmpl) {
-            my $blog = $blogs{$tmpl->blog_id}  
-                   ||= MT::Blog->load({ id => $tmpl->blog_id });
-	    $row->{'blog'}            = $blog->name;
-	    $row->{'template'}        = $tmpl->name;
-	    $row->{'path'}            = $fi->file_path;
-	} else {
-	    $row->{'blog'}            = '<em>Deleted</em>';
-	    $row->{'template'}        = '<em>Deleted</em>';
-	    $row->{'path'}            = '<em>Deleted</em>';
-	}
-        my $ts                    = epoch2ts(undef, $job->insert_time);
-        $row->{'id'}              = $job->jobid;
-        $row->{'priority'}        = $job->priority;
-        $row->{'claimed'}         = $job->grabbed_until ? 1 : 0;
-        $row->{'insert_time'}     = relative_date( $ts, time );
-        $row->{'insert_time_ts'}  = $ts;
-        $row->{'has_error'}       = $err ? 1 : 0;
-        $row->{'error_msg'}       = $err ? $err->message : undef;
-    };
-
-    require MT::TheSchwartz::FuncMap;
-    my $fm = MT::TheSchwartz::FuncMap->load(
-        {funcname => 'MT::Worker::Publish'});
-
-    $fm or return $app->error(
-        'It appears that your have never used publish queue before. '
-        .'To enable publish queue, set any template to publish '
-        .'"Via Publish Queue" and then save and publish that template. '
-        .'Then return to this screen to see everything humming along.');
-
-    # %terms is used in case you want to filter the query that will fetch
-    # the items from the database that correspond to the rows of the table
-    # being rendered to the screen
-    my %terms = ( funcid => $fm->funcid );
-
-    # %args is used in case you want to sort or otherwise modify the 
-    # query arguments of the table, e.g. the sort order or direction of
-    # the query associated with the data being displayed in the table.
-    my $clause = ' = ts_job_uniqkey';
-    my %args = (
-        sort  => [
-                   { column => "priority", desc => "DESC" },
-                   { column => "insert_time", }
-               ],
-        direction => 'descend',
-        join => MT::FileInfo->join_on( undef, { id => \$clause }),
-        );
-
-    # %params is an addition hash of input parameters into the template
-    # and can be used to hold an arbitrary set of name/value pairs that
-    # can be displayed in your template.
-    my $params = {
-        'is_deleted'  => $q->param('deleted') ? 1 : 0,
-        'is_priority' => $q->param('priority') ? 1 : 0,
-        ($q->param('priority') ? ('priority' => $q->param('priority')) : ())
-    };
-
-    # Fetch an instance of the current plugin using the plugin's key.
-    # This is done as a convenience only.
-    my $plugin = MT->component('PQManager');
-
-    # This is the main work horse of your handler. This subrotine will
-    # actually conduct the query to the database for you, populate all
-    # that is necessary for the pagination controls and more. The 
-    # query is filtered and controlled using the %terms and %args 
-    # parameters, with 'type' corresponding to the database table you
-    # will query.
-    return $app->listing({
-        type           => 'ts_job', # the object's MT->model
-        terms    => \%terms,
-        args     => \%args,
-        listing_screen => 1,
-        code     => $code,
-        template => $plugin->load_tmpl('list.tmpl'),
-        params   => $params,
-    });
 }
 
 1;
