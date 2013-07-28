@@ -37,7 +37,7 @@ sub hdlr_widget {
     1;
 }
 
-sub mode_delete {
+sub _delete {
     my $app = shift;
     $app->validate_magic
       or return;
@@ -50,18 +50,52 @@ sub mode_delete {
         $job->remove();
     }
     $app->redirect(
-            $app->uri(
-                'mode' => 'list',
-                args   => {
-                    _type => 'ts_job',
-                    blog_id => 0,
-                    deleted => 1,
-                }
-            )
-        );
+        $app->uri(
+            mode => 'list',
+            args   => {
+                _type => 'ts_job',
+                blog_id => 0,
+                deleted => 1,
+            }
+        )
+    );
 }
 
-sub mode_priority {
+sub _publish {
+    my $app = shift;
+    $app->validate_magic
+      or return;
+
+    require MT::WeblogPublisher;
+    require MT::TheSchwartz::Job;
+    require MT::FileInfo;
+    my @jobs = $app->param('id');
+    my $pub = MT::WeblogPublisher->new;
+    for my $job_id (@jobs) {
+        my $job = MT::TheSchwartz::Job->load({jobid => $job_id})
+          or next;
+        if ( my $key = $job->uniqkey ) {
+            if ( my $finfo = MT::FileInfo->load( $key ) ) {
+                if ( $pub->rebuild_from_fileinfo( $finfo ) ) {
+                    $job->remove
+                      or die $job->errstr;
+                }
+            }
+        }
+    }
+    $app->redirect(
+        $app->uri(
+            mode => 'list',
+            args   => {
+                _type => 'ts_job',
+                blog_id => 0,
+                published => 1,
+            }
+        )
+    );
+}
+
+sub _priority {
     my $app = shift;
     $app->validate_magic or return;
 
@@ -69,7 +103,6 @@ sub mode_priority {
     if (($pri !~ /^[0-9]+$/)||($pri > 10)) {
         return $app->error("You must enter a number between 1 and 10.");
     }
-
     require MT::TheSchwartz::Job;
     my @jobs = $app->param('id');
     for my $job_id (@jobs) {
@@ -78,15 +111,15 @@ sub mode_priority {
     $job->save();
     }
     $app->redirect(
-            $app->uri(
-                'mode' => 'list',
-                args   => {
-                    _type => 'ts_job',
-                    blog_id => 0,
-                    priority => $pri,
-                }
-            )
-        );
+        $app->uri(
+            mode => 'list',
+            args   => {
+                _type => 'ts_job',
+                blog_id => 0,
+                priority => $pri,
+            }
+        )
+    );
 }
 
 1;

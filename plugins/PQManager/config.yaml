@@ -35,7 +35,7 @@ listing_screens:
       - website
       - system
     default_sort_key: priority
-    permission: administrator
+    permission: administer
     scope_mode: none
     condition: >
       sub {
@@ -60,7 +60,7 @@ list_properties:
       display: option
     insert_time:
       auto: 1
-      label: Insert Time
+      label: Inserted
       order: 300
       display: default
       html: >
@@ -73,7 +73,7 @@ list_properties:
           my $insert_time =
             format_ts( '%I:%M:%S%p', $inser_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
           my $out = qq {
-            <span>$insert_date</span><span class="created_time"><br />$insert_time</span>
+            <span>$insert_date<br />$insert_time</span>
           };
           return $out;
         }
@@ -107,8 +107,9 @@ list_properties:
             or return qq{ <span>-</span> };
           my $blog_name = $blog->name;
           my $blog_id = $blog->id;
+          my $admin_script = MT->config( 'AdminScript' );
           my $out = qq {
-            <span><a href="./mt.cgi?blog_id=$blog_id">$blog_name</a></span>
+            <span><a href="./$admin_script?blog_id=$blog_id">$blog_name</a></span>
           };
           return $out;
         }
@@ -151,8 +152,9 @@ list_properties:
             my $entry = mt->model( 'entry' )->load( $entry_id )
               or return '<em>Load Entry Failure</em>';
             my $entry_title = $entry->title || 'no title';
+            my $admin_script = MT->config( 'AdminScript' );
             $out = qq {
-            <span><a href="./mt.cgi?__mode=view&_type=$entry_type&blog_id=$blog_id&id=$entry_id">$entry_title</a></span>
+            <span><a href="./$admin_script?__mode=view&_type=$entry_type&blog_id=$blog_id&id=$entry_id">$entry_title</a></span>
             };
           }
           $entry_id ? return $out : ($fi->archive_type eq 'Individual')||($fi->archive_type eq 'Page')
@@ -173,8 +175,9 @@ list_properties:
             my $template_name = $tmpl->name || 'no name';
             my $blog_id = $fi->blog_id || 0;
             my $template_id = $fi->template_id;
+            my $admin_script = MT->config( 'AdminScript' );
             my $out = qq {
-              <span><a href="./mt.cgi?__mode=view&_type=template&id=$template_id&blog_id=$blog_id">$template_name</a></span>
+              <span><a href="./$admin_script?__mode=view&_type=template&id=$template_id&blog_id=$blog_id">$template_name</a></span>
             };
             return $out;
           } else {
@@ -186,21 +189,25 @@ list_properties:
       label: Coalesce
       order: 650
       display: option
+      filter_editable: 0
     funcid:
       auto: 1
       label: Funcid
       order: 700
       display: option
+      filter_editable: 0
     grabbed_until:
       auto: 1
       label: Grabbed Until
       order: 750
       display: option
+      filter_editable: 0
     run_after:
       auto: 1
       label: Run After
       order: 800
       display: option
+      filter_editable: 0
     err:
       label: Error
       base: __virtual.string
@@ -221,15 +228,14 @@ list_actions:
   ts_job: 
     priority: 
       label: Change Priority
-      code: $PQManager::PQManager::Plugin::mode_priority
+      code: $PQManager::PQManager::Plugin::_priority
       input: 1
       input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
     delete:
       label: Delete
-      code: $PQManager::PQManager::Plugin::mode_delete
+      code: $PQManager::PQManager::Plugin::_delete
       button: 1
-    #publish:
-    #  label: Publish
-    #  code: >
-    #    sub { return 1; }
-    #  button: 1
+    publish:
+      label: Publish
+      code: $PQManager::PQManager::Plugin::_publish
+      button: 1
