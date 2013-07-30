@@ -62,6 +62,7 @@ list_properties:
       label: Inserted
       order: 300
       display: default
+      filter_editable: 0
       html: >
         sub {
           use MT::Util qw( epoch2ts format_ts );
@@ -81,6 +82,7 @@ list_properties:
       base: __virtual.string
       display: force
       order: 400
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -97,6 +99,7 @@ list_properties:
       base: __virtual.string
       display: option
       order: 450
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -122,6 +125,7 @@ list_properties:
       base: __virtual.string
       display: option
       order: 500
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -138,6 +142,7 @@ list_properties:
       base: __virtual.string
       display: option
       order: 550
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -164,6 +169,7 @@ list_properties:
       base: __virtual.string
       display: option
       order: 600
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
@@ -212,6 +218,7 @@ list_properties:
       base: __virtual.string
       display: option
       order: 900
+      filter_editable: 0
       html: >
         sub {
           my ($prop, $obj, $app) = @_;
