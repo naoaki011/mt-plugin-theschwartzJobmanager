@@ -4,9 +4,8 @@
 package PQManager::Plugin;
 
 use strict;
-use MT::Util qw( relative_date epoch2ts iso2ts );
+use MT::Util qw( epoch2ts iso2ts );
 use warnings;
-use Carp;
 
 sub hdlr_widget {
     my $app = shift;

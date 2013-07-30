@@ -4,14 +4,13 @@ l10n_class:  PQManager::L10N
 description: <__trans phrase='Provides a management console for Publish Queue.'>
 version: 0.10
 
-#widgets:
-#  TheSchwartzStats:
-#    label: TheSchwartz Stats
-#    template: widget.tmpl
-#    singular: true
-#    set: sidebar
-#    view: blog
-#    handler: $PQManager::PQManager::Plugin::hdlr_widget
+widgets:
+  TheSchwartzStats:
+    label: TheSchwartz Stats
+    template: widget.tmpl
+    singular: true
+    set: sidebar
+    handler: $PQManager::PQManager::Plugin::hdlr_widget
 applications:
   cms:
     menus:
