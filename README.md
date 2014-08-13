@@ -17,7 +17,7 @@ mt-plugin-publishque-manager
 
 ## Current Bug
 
- * ラベルとカラムがずれて表示される
+ * ~~ラベルとカラムがずれて表示される~~ （対応済み）
  * priority指定した項目が幅ゼロになる
 
 ## ToDo
