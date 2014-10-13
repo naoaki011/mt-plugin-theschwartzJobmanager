@@ -47,7 +47,7 @@ sub _delete {
           or next;
         my $funcmap = MT->model('ts_funcmap')->load({funcid => $job->funcid})
           or next;
-        next unless ($funcmap->funcname eq 'MT::Worker::Publish');
+        next unless (($funcmap->funcname eq 'MT::Worker::Publish') || ($funcmap->funcname eq 'AzureBlobStorage::Worker::SyncFrom') || ($funcmap->funcname eq 'AzureBlobStorage::Worker::SyncTo'));
         $job->remove();
     }
     $app->redirect(
@@ -110,9 +110,6 @@ sub _priority {
     for my $job_id (@jobs) {
         my $job = MT->model('ts_job')->load({jobid => $job_id})
           or next;
-        my $funcmap = MT->model('ts_funcmap')->load({funcid => $job->funcid})
-          or next;
-        next unless ($funcmap->funcname eq 'MT::Worker::Publish');
         $job->priority($pri);
         $job->save();
     }

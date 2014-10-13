@@ -5,7 +5,7 @@ use base 'PQManager::L10N::en_us';
 use vars qw( %Lexicon );
 
 %Lexicon = (
-    'Provides a management console for Publish Queue.' => '公開キューを管理する機能を追加します。',
+    'Provides a management console for TheSchwartz Jobs.' => 'TheSchwartz Jobを管理する機能を追加します。',
     'Change Priority' => '優先度を変更する',
     'You must enter a number between 1 and 10.' => '優先度に入力できる数字は、1から10までの整数です。',
     'Publish Queue Jobs' => '公開キューのジョブ',
