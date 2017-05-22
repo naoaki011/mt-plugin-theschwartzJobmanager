@@ -1,16 +1,9 @@
-id: PQManager
+id: PublishQueueManager
 name: Publish Queue Manager
-l10n_class:  PQManager::L10N
+l10n_class:  PublishQueueManager::L10N
 description: <__trans phrase='Provides a management console for Publish Queue.'>
 version: 0.10
 
-widgets:
-  TheSchwartzStats:
-    label: TheSchwartz Stats
-    template: widget.tmpl
-    singular: true
-    set: sidebar
-    handler: $PQManager::PQManager::Plugin::hdlr_widget
 applications:
   cms:
     menus:
@@ -33,6 +26,7 @@ listing_screens:
       - blog
       - website
       - system
+    id_column: jobid
     default_sort_key: priority
     permission: administer
     scope_mode: none
@@ -40,7 +34,6 @@ listing_screens:
       sub {
         return 1;
       }
-    id_column: jobid
 list_properties:
   ts_job:
     jobid:
@@ -232,17 +225,4 @@ list_properties:
           return $out;
         }
 list_actions:
-  ts_job: 
-    priority: 
-      label: Change Priority
-      code: $PQManager::PQManager::Plugin::_priority
-      input: 1
-      input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
-    delete:
-      label: Delete
-      code: $PQManager::PQManager::Plugin::_delete
-      button: 1
-    publish:
-      label: Publish
-      code: $PQManager::PQManager::Plugin::_publish
-      button: 1
+  ts_job: $PublishQueueManager::PublishQueueManager::Listing::_list_actions_tsjob

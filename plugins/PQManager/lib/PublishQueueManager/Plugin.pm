@@ -1,40 +1,8 @@
-# Publish Queue Manager Plugin for Movable Type
-# Author: Byrne Reese, byrne at majordojo dot com
-# Copyright (C) 2008 Six Apart, Ltd.
-package PQManager::Plugin;
+package PublishQueueManager::Plugin;
 
 use strict;
 use MT::Util qw( epoch2ts iso2ts );
 use warnings;
-
-sub hdlr_widget {
-    my $app = shift;
-    my ($tmpl, $param) = @_;
-
-    my @data;
-    my $task_workers = MT->component('core')->registry('task_workers');
-    for my $name (keys %$task_workers) {
-        my $worker = $task_workers->{$name};
-        my $funcmap = MT->model('ts_funcmap')->load({
-            funcname => $worker->{class}
-        }, {
-            unique   => 1
-        })
-            or next;
-        my $count = MT->model('ts_job')->count({
-            funcid   => $funcmap->funcid
-        });
-
-        push @data, {
-            name  => $name,
-            label => $worker->{label},
-            count => $count,
-        };
-    }
-    $param->{data} = \@data;
-
-    1;
-}
 
 sub _delete {
     my $app = shift;
