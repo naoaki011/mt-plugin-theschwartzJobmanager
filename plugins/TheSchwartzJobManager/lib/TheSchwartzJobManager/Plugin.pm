@@ -1,8 +1,37 @@
-package PublishQueueManager::Plugin;
+package TheSchwartzJobManager::Plugin;
 
 use strict;
 use MT::Util qw( epoch2ts iso2ts );
 use warnings;
+
+sub hdlr_widget {
+    my $app = shift;
+    my ($tmpl, $param) = @_;
+
+    my @data;
+    my $task_workers = MT->component('core')->registry('task_workers');
+    for my $name (keys %$task_workers) {
+        my $worker = $task_workers->{$name};
+        my $funcmap = MT->model('ts_funcmap')->load({
+            funcname => $worker->{class}
+        }, {
+            unique   => 1
+        })
+            or next;
+        my $count = MT->model('ts_job')->count({
+            funcid   => $funcmap->funcid
+        });
+
+        push @data, {
+            name  => $name,
+            label => $worker->{label},
+            count => $count,
+        };
+    }
+    $param->{data} = \@data;
+
+    1;
+}
 
 sub _delete {
     my $app = shift;
@@ -15,7 +44,7 @@ sub _delete {
           or next;
         my $funcmap = MT->model('ts_funcmap')->load({funcid => $job->funcid})
           or next;
-        next unless ($funcmap->funcname eq 'MT::Worker::Publish');
+        #next unless ($funcmap->funcname eq 'MT::Worker::Publish');
         $job->remove();
     }
     $app->redirect(

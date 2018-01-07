@@ -1,0 +1,346 @@
+id: TheSchwartzJobManager
+name: TheSchwartz Job Manager
+l10n_class: TheSchwartzJobManager::L10N
+description: <__trans phrase='Provides a management console for TheSchwartz Jobs.'>
+version: 0.12
+
+widgets:
+  TheSchwartzStats:
+    label: TheSchwartz Stats
+    template: widget.tmpl
+    singular: true
+    set: sidebar
+    handler: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::hdlr_widget
+applications:
+  cms:
+    menus:
+      schwartz:
+        label: TheSchwartz
+        order: 1000
+      schwartz:pqueue:
+        label: Publish Queue
+        order: 1000
+        mode: list
+        args:
+          _type: ts_job
+          filter: funcid
+          filter_val: MT::Worker::Publish
+        view:
+          - system
+          - website
+          - blog
+      schwartz:jobs:
+        label: Jobs
+        order: 1000
+        mode: list
+        args:
+          _type: ts_job
+        view:
+          - system
+          - website
+          - blog
+listing_screens:
+  ts_job:
+    object_label_plural: Jobs
+    screen_label: Jobs
+    #primary: uniqkey
+    view:
+      - blog
+      - website
+      - system
+    id_column: jobid
+    default_sort_key: priority
+    permission: administer
+    #scope_mode: none
+    condition: >
+      sub {
+        return 1;
+      }
+list_properties:
+  ts_job:
+    jobid:
+      auto: 1
+      label: ID
+      order: 100
+      display: default
+    uniqkey:
+      auto: 1
+      label: Uniqkey
+      order: 150
+      display: option
+    priority:
+      auto: 1
+      label: Priority
+      order: 200
+      display: default
+    insert_time:
+      auto: 1
+      label: Inserted
+      order: 300
+      display: default
+      filter_editable: 0
+      html: >
+        sub {
+          use MT::Util qw( epoch2ts format_ts );
+          my ($prop, $obj, $app) = @_;
+          my $inser_ts = epoch2ts($app->blog, $obj->insert_time);
+          my $insert_date =
+            format_ts( MT::App::CMS::LISTING_DATE_FORMAT(), $inser_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $insert_time =
+            format_ts( '%I:%M:%S%p', $inser_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $out = qq {
+            <span>$insert_date<br />$insert_time</span>
+          };
+          return $out;
+        }
+    publish_path:
+      label: Publish Path
+      base: __virtual.string
+      display: option
+      order: 400
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $funcmap = MT->model('ts_funcmap')->load({funcid => $obj->funcid})
+            or return qq{ <em>Load Failure</em> };
+          my $url = '-';
+          if ($funcmap->funcname eq 'MT::Worker::Publish') {
+            my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+              or return qq{ <em>Load Failure</em> };
+            $url = $fi->url || 'No PublishPath';
+          }
+          my $out = qq {
+            <span>$url</span>
+          };
+          return $out;
+        }
+    blog:
+      label: Blog
+      base: __virtual.string
+      display: default
+      order: 450
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $funcmap = MT->model('ts_funcmap')->load({funcid => $obj->funcid})
+            or return qq{ <em>Load Failure</em> };
+          my $out = qq { <span>-</span> };
+          if ($funcmap->funcname eq 'MT::Worker::Publish') {
+            my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+              or return qq{ <span>-</span> };
+            my $blog = mt->model( 'blog' )->load({ id => $fi->blog_id })
+              or return qq{ <span>-</span> };
+            my $blog_name = $blog->name;
+            my $blog_id = $blog->id;
+            my $admin_script = MT->config( 'AdminScript' );
+            $out = qq {
+              <span><a href="./$admin_script?blog_id=$blog_id">$blog_name</a></span>
+            };
+          }
+          return $out;
+        }
+      condition: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          return 1;
+        }
+    archive_type:
+      label: Archive Type
+      base: __virtual.string
+      display: option
+      order: 500
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $funcmap = MT->model('ts_funcmap')->load({funcid => $obj->funcid})
+            or return qq{ <em>Load Failure</em> };
+          my $out = qq{ <span>-</span> };
+          if ($funcmap->funcname eq 'MT::Worker::Publish') {
+            my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+              or return qq{ <span>-</span> };
+            my $archive_type = $fi->archive_type || 'No ArchiveType';
+            $out = qq {
+              <span>$archive_type</span>
+            };
+          }
+          return $out;
+        }
+    entry:
+      label: Entry
+      base: __virtual.string
+      display: option
+      order: 550
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $funcmap = MT->model('ts_funcmap')->load({funcid => $obj->funcid})
+            or return qq{ <em>Load Failure</em> };
+          my $out = qq{ <span>-</span> };
+          if ($funcmap->funcname eq 'MT::Worker::Publish') {
+            my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+              or return qq{ <span>-</span> };
+            my $entry_id = $fi->entry_id || '';
+            if ($entry_id) {
+              my $blog_id = $fi->blog_id || 0;
+              my $entry_type = ($fi->archive_type eq 'Individual') ? 'entry' : 'page';
+              my $entry = mt->model( 'entry' )->load( $entry_id )
+                or return qq { <em>Load Entry Failure</em> };
+              my $entry_title = $entry->title || 'no title';
+              my $admin_script = MT->config( 'AdminScript' );
+              $out = qq {
+                <span><a href="./$admin_script?__mode=view&_type=$entry_type&blog_id=$blog_id&id=$entry_id">$entry_title</a></span>
+              };
+            }
+            $entry_id ? return $out : ($fi->archive_type eq 'Individual')||($fi->archive_type eq 'Page')
+              ? return qq { <span>No EntryID</span> } : return qq { <span>-</span> };
+          }
+          else {
+            return $out;
+          }
+        }
+    template:
+      label: Template
+      base: __virtual.string
+      display: option
+      order: 600
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          my $funcmap = MT->model('ts_funcmap')->load({funcid => $obj->funcid})
+            or return qq{ <em>Load Failure</em> };
+          if ($funcmap->funcname eq 'MT::Worker::Publish') {
+            my $fi = mt->model( 'fileinfo' )->load({ id => $obj->uniqkey })
+              or return qq{ <span>-</span> };
+            my $tmpl = mt->model( 'template' )->load({ id => $fi->template_id });
+            if ($tmpl) {
+              my $template_name = $tmpl->name || 'no name';
+              my $blog_id = $fi->blog_id || 0;
+              my $template_id = $fi->template_id;
+              my $admin_script = MT->config( 'AdminScript' );
+              my $out = qq {
+                <span><a href="./$admin_script?__mode=view&_type=template&id=$template_id&blog_id=$blog_id">$template_name</a></span>
+              };
+              return $out;
+            } else {
+              return qq{ <em>No Template</em> };
+            }
+          }
+          else {
+            return qq{ <span>-</span> };
+          }
+        }
+    coalesce:
+      auto: 1
+      label: Coalesce
+      order: 650
+      display: option
+      filter_editable: 0
+    funcid:
+      auto: 1
+      label: Function Name
+      order: 700
+      display: default
+      base: __virtual.single_select
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          #use Data::Dumper;
+          my $funcmap = mt->model( 'ts_funcmap' )->load({ funcid => $obj->funcid });
+          return MT::Util::encode_html( $funcmap->funcname );
+        }
+      terms: $TheSchwartzJobManager::TheSchwartzJobManager::Listing::_terms_funcid
+      single_select_options:
+        -
+          label: Publish Queue
+          value: "MT::Worker::Publish"
+        -
+          label: Summary Watcher
+          value: "MT::Worker::SummaryWatcher"
+    run_after:
+      auto: 1
+      label: Run After
+      order: 800
+      display: option
+      filter_editable: 0
+      html: >
+        sub {
+          use MT::Util qw( epoch2ts format_ts );
+          my ($prop, $obj, $app) = @_;
+          my $run_after_ts = epoch2ts($app->blog, $obj->run_after);
+          my $run_after_date =
+            format_ts( MT::App::CMS::LISTING_DATE_FORMAT(), $run_after_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $run_after_time =
+            format_ts( '%I:%M:%S%p', $run_after_ts, $app->blog, $app->user ? $app->user->preferred_language : undef );
+          my $out = qq {
+            <span>$run_after_date<br />$run_after_time</span>
+          };
+          return $out;
+        }
+    #author_id:
+    #  auto: 1
+    #  label: AuthorID
+    #  order: 900
+    #  display: option
+    grabbed_until:
+      auto: 1
+      label: Grabbed Until
+      order: 750
+      display: option
+      filter_editable: 0
+    err:
+      label: Error
+      base: __virtual.string
+      display: option
+      order: 900
+      filter_editable: 0
+      html: >
+        sub {
+          my ($prop, $obj, $app) = @_;
+          require MT::TheSchwartz::Error;
+          my $err = MT::TheSchwartz::Error->load({ jobid => $obj->jobid });
+          my $err_msg = $err ? $err->message : undef;
+          my $out = $err_msg ? qq {
+            <span>$err_msg</span>
+          } : '';
+          return $out;
+        }
+    #arg:
+    #  auto: 1 MediumBlobÇÕñ¢íËã`Ç»ÇÃÇ≈ÉGÉâÅ[
+    #  label: Arg
+    #  order: 900
+    #  display: default
+list_actions:
+  ts_job: 
+    priority: 
+      label: Change Priority
+      code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_priority
+      input: 1
+      input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
+    delete:
+      label: Delete
+      code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_delete
+      button: 1
+    #publish:
+    #  label: Publish
+    #  code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_publish
+    #  button: 1#system_filters:
+#  ts_job:
+#    publish_queue_job:
+#      label: Job is Publish Queue
+#      items:
+#        -
+#          type: funcid
+#          args:
+#            option: equal
+#            value: "Publish"
+#    order: 99999
+#tasks:
+#  PublishQueNormalize:
+#    label: Publish Queue Normalize
+#    frequency: 60
+#    code: $TheSchwartzJobManager::TheSchwartzJobManager::Task::_normalize_publish_queue

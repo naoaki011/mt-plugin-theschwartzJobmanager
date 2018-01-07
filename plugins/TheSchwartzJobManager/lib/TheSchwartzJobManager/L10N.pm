@@ -1,4 +1,4 @@
-package PQManager::L10N;
+package TheSchwartzJobManager::L10N;
 use strict;
 use base 'MT::Plugin::L10N';
 
