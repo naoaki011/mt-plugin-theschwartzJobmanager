@@ -17,7 +17,17 @@ applications:
       schwartz:
         label: TheSchwartz
         order: 1000
-      schwartz:pqueue:
+      schwartz:jobs:
+        label: Jobs
+        order: 1000
+        mode: list
+        args:
+          _type: ts_job
+        view:
+          - system
+          - website
+          - blog
+      tools:pqueue:
         label: Publish Queue
         order: 1000
         mode: list
@@ -25,16 +35,6 @@ applications:
           _type: ts_job
           filter: funcid
           filter_val: MT::Worker::Publish
-        view:
-          - system
-          - website
-          - blog
-      schwartz:jobs:
-        label: Jobs
-        order: 1000
-        mode: list
-        args:
-          _type: ts_job
         view:
           - system
           - website
