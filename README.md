@@ -1,7 +1,5 @@
-mt-plugin-theschwartzJobmanager
+TheSchwartz Job Manager for Movable Type
 ============================
-
-# TheSchwartz Job Manager for Movable Type
 
 ## About
 
