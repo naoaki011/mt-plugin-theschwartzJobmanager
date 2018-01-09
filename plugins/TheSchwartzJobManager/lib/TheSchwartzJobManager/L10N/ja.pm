@@ -23,6 +23,7 @@ use vars qw( %Lexicon );
     'Job Description' => 'ジョブの説明',
     'Remaining Jobs' => 'ジョブ数',
     'Manage Publish Queue Jobs' => '公開キュージョブを一覧する',
+    'Job is Publish Queue' => 'ジョブが公開キュー',
 );
 
 1;

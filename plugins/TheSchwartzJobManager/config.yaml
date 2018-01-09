@@ -51,7 +51,7 @@ listing_screens:
     id_column: jobid
     default_sort_key: priority
     permission: administer
-    #scope_mode: none
+    scope_mode: none
     condition: >
       sub {
         return 1;
