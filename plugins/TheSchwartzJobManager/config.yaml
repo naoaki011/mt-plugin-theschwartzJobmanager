@@ -321,24 +321,28 @@ list_actions:
       code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_priority
       input: 1
       input_label: "Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest):"
+      class: icon-action
+      return_args: 1
     delete:
       label: Delete
       code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_delete
       button: 1
+      class: icon-action
+      return_args: 1
     #publish:
     #  label: Publish
     #  code: $TheSchwartzJobManager::TheSchwartzJobManager::Plugin::_publish
     #  button: 1#system_filters:
-#  ts_job:
-#    publish_queue_job:
-#      label: Job is Publish Queue
-#      items:
-#        -
-#          type: funcid
-#          args:
-#            option: equal
-#            value: "Publish"
-#    order: 99999
+system_filters:
+  ts_job:
+    publish_queue_job:
+      label: Job is Publish Queue
+      items:
+        -
+          type: funcid
+          args:
+            option: equal
+            value: "MT::Worker::Publish"
 #tasks:
 #  PublishQueNormalize:
 #    label: Publish Queue Normalize
