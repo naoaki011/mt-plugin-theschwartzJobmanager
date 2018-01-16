@@ -12,6 +12,7 @@ use vars qw( %Lexicon );
     'The selected jobs were deleted.' => '選択したジョブは削除されました。',
     'The selected jobs had their priority set to [_1].' => '選択したジョブの優先度は「[_1]」に変更されました。',
     'No jobs could be found.' => 'ジョブはありません。',
+    'Jobs' => 'ジョブ',
     'Uniqkey' => '一意のキー',
     'Pri.' => '優先度',
     'Priority' => '優先度',
@@ -24,6 +25,7 @@ use vars qw( %Lexicon );
     'Remaining Jobs' => 'ジョブ数',
     'Manage Publish Queue Jobs' => '公開キュージョブを一覧する',
     'Job is Publish Queue' => 'ジョブが公開キュー',
+    'Enter a priority from 1 to 10 to assign to the selected job(s) (1 = lowest, 10 = highest)' => 'ジョブの優先度に設定する 1 から 10 までの数字を入力',
 );
 
 1;
